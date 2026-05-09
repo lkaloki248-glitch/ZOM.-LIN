@@ -33,8 +33,8 @@ export default function Hero({ onShop }: { onShop: () => void }) {
       setTimeout(() => {
         setPrev(null);
         setFading(false);
-      }, 1000);
-    }, 3000);
+      }, 2500);
+    }, 6000);
     return () => clearInterval(interval);
   }, [current]);
 
@@ -50,7 +50,7 @@ export default function Hero({ onShop }: { onShop: () => void }) {
           style={{
             backgroundImage: `url('${BG_IMAGES[prev].url}')`,
             opacity: fading ? 0 : 1,
-            transition: "opacity 1s ease-in-out",
+            transition: "opacity 2.5s ease-in-out",
             zIndex: 0,
           }}
         />
@@ -62,7 +62,7 @@ export default function Hero({ onShop }: { onShop: () => void }) {
         style={{
           backgroundImage: `url('${BG_IMAGES[current].url}')`,
           opacity: fading ? 1 : 1,
-          transition: "opacity 1s ease-in-out",
+          transition: "opacity 2.5s ease-in-out",
           zIndex: 1,
         }}
       />
@@ -78,23 +78,6 @@ export default function Hero({ onShop }: { onShop: () => void }) {
         style={{ background: "linear-gradient(90deg, transparent, rgba(201,146,26,0.5), transparent)" }} />
       <div className="absolute bottom-8 right-8 left-8 h-px z-10"
         style={{ background: "linear-gradient(90deg, transparent, rgba(201,146,26,0.5), transparent)" }} />
-
-      {/* Dot indicators */}
-      <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {BG_IMAGES.map((img, i) => (
-          <button
-            key={i}
-            onClick={() => { setPrev(current); setFading(true); setCurrent(i); setTimeout(() => { setPrev(null); setFading(false); }, 1000); }}
-            className="rounded-full transition-all duration-300"
-            style={{
-              width: i === current ? "22px" : "7px",
-              height: "7px",
-              background: i === current ? "#c9921a" : "rgba(255,255,255,0.3)",
-            }}
-            title={img.gender === "male" ? "رجالي" : "نسائي"}
-          />
-        ))}
-      </div>
 
       {/* Content */}
       <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
