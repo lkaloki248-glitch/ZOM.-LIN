@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useStore, Product } from "../context/StoreContext";
-import { Plus, Edit2, Trash2, Save, X, ArrowRight, Upload, Download } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, ArrowRight, Upload, Download, Lock, Eye, EyeOff } from "lucide-react";
 
 const IMGBB_KEY = "fb99db1296d15c3b43676b06d8e66c51";
 const CATEGORIES = ["هوديات", "جاكيتات", "قمصان", "تيشرتات", "بناطيل"];
+const ADMIN_PASSWORD = "CodPro@#2025!Mx$Secure";
 
 const EMPTY_FORM = {
   name: "",
@@ -14,10 +15,114 @@ const EMPTY_FORM = {
   description: "",
 };
 
+function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
+  const [, navigate] = useLocation();
+  const [input, setInput] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked] = useState(false);
+
+  const handleLogin = () => {
+    if (locked) return;
+    if (input === ADMIN_PASSWORD) {
+      sessionStorage.setItem("codpro_admin_auth", "1");
+      onSuccess();
+    } else {
+      const next = attempts + 1;
+      setAttempts(next);
+      setError(true);
+      setInput("");
+      setTimeout(() => setError(false), 2000);
+      if (next >= 5) {
+        setLocked(true);
+        setTimeout(() => { setLocked(false); setAttempts(0); }, 30000);
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "hsl(240 6% 4%)" }}>
+      <div className="w-full max-w-sm rounded-2xl p-8 flex flex-col items-center gap-6"
+        style={{ background: "hsl(240 6% 8%)", border: "1px solid rgba(201,146,26,0.3)" }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2"
+          style={{ background: "rgba(201,146,26,0.1)", border: "2px solid rgba(201,146,26,0.4)" }}>
+          <Lock size={28} style={{ color: "#c9921a" }} />
+        </div>
+        <div className="text-center">
+          <div className="text-2xl font-black mb-1" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>COD PRO</div>
+          <div className="text-sm" style={{ color: "rgba(240,234,214,0.5)" }}>لوحة الإدارة — الدخول مقيّد</div>
+        </div>
+
+        <div className="w-full flex flex-col gap-3">
+          <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>كلمة المرور</label>
+          <div className="relative">
+            <input
+              type={showPw ? "text" : "password"}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              disabled={locked}
+              placeholder="أدخل كلمة المرور..."
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none pr-4 pl-10"
+              style={{
+                background: error ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(201,146,26,0.3)"}`,
+                color: "#f0ead6",
+                transition: "border-color 0.2s",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: "rgba(201,146,26,0.6)" }}
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-xs text-center" style={{ color: "#ef4444" }}>
+              كلمة المرور غير صحيحة {attempts >= 3 && `(${5 - attempts} محاولات متبقية)`}
+            </p>
+          )}
+          {locked && (
+            <p className="text-xs text-center" style={{ color: "#ef4444" }}>
+              تم قفل الدخول مؤقتًا لمدة 30 ثانية بسبب محاولات متعددة
+            </p>
+          )}
+
+          <button
+            onClick={handleLogin}
+            disabled={locked || !input}
+            className="w-full py-3 rounded-xl font-black text-sm mt-1 transition-opacity"
+            style={{
+              background: locked || !input ? "rgba(201,146,26,0.3)" : "linear-gradient(135deg, #c9921a, #e8b84b)",
+              color: "#0a0a0b",
+              cursor: locked || !input ? "not-allowed" : "pointer",
+            }}
+          >
+            {locked ? "🔒 مقفل مؤقتًا..." : "دخول"}
+          </button>
+        </div>
+
+        <button onClick={() => navigate("/")} className="text-xs" style={{ color: "rgba(240,234,214,0.3)" }}>
+          ← العودة للمتجر
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { products, addProduct, editProduct, deleteProduct, importProducts } = useStore();
   const [, navigate] = useLocation();
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("codpro_admin_auth") === "1");
   const [form, setForm] = useState(EMPTY_FORM);
+
+  if (!authed) return <AdminLogin onSuccess={() => setAuthed(true)} />;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
