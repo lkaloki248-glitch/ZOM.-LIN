@@ -1,13 +1,19 @@
 import { useState } from "react";
-import { ShoppingCart, Check } from "lucide-react";
+import { ShoppingCart, Check, Eye } from "lucide-react";
 import { Product, useStore } from "../context/StoreContext";
 
-export default function ProductCard({ product }: { product: Product }) {
+interface Props {
+  product: Product;
+  onOpenModal: (product: Product) => void;
+}
+
+export default function ProductCard({ product, onOpenModal }: Props) {
   const { addToCart, setCartOpen } = useStore();
   const [added, setAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
     addToCart(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -16,16 +22,17 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <div
-      className="product-card rounded-2xl overflow-hidden flex flex-col"
+      className="product-card rounded-2xl overflow-hidden flex flex-col cursor-pointer"
       style={{ background: "hsl(240 6% 8%)", border: "1px solid rgba(201,146,26,0.15)" }}
+      onClick={() => onOpenModal(product)}
     >
       {/* Image */}
-      <div className="relative overflow-hidden" style={{ paddingTop: "110%" }}>
+      <div className="relative overflow-hidden group" style={{ paddingTop: "110%" }}>
         <img
           src={imgError ? "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80" : product.image}
           alt={product.name}
           onError={() => setImgError(true)}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
         />
         {/* Category badge */}
@@ -35,16 +42,14 @@ export default function ProductCard({ product }: { product: Product }) {
             {product.category}
           </span>
         </div>
-        {/* Overlay on hover */}
-        <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-          style={{ background: "rgba(10,10,12,0.5)" }}>
-          <button
-            onClick={handleAdd}
-            className="px-6 py-2 rounded-full font-bold text-sm transform translate-y-4 hover:translate-y-0 transition-all"
-            style={{ background: "linear-gradient(135deg, #c9921a, #e8b84b)", color: "#0a0a0b" }}
-          >
-            أضف للسلة
-          </button>
+        {/* Hover overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2"
+          style={{ background: "rgba(10,10,12,0.55)" }}>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm"
+            style={{ background: "linear-gradient(135deg, #c9921a, #e8b84b)", color: "#0a0a0b" }}>
+            <Eye size={15} />
+            عرض التفاصيل
+          </div>
         </div>
       </div>
 
@@ -54,11 +59,12 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         {product.description && (
-          <p className="text-xs" style={{ color: "rgba(240,234,214,0.5)" }}>
+          <p className="text-xs line-clamp-1" style={{ color: "rgba(240,234,214,0.45)" }}>
             {product.description}
           </p>
         )}
-        <div className="mt-auto flex items-center justify-between pt-3" style={{ borderTop: "1px solid rgba(201,146,26,0.1)" }}>
+        <div className="mt-auto flex items-center justify-between pt-3"
+          style={{ borderTop: "1px solid rgba(201,146,26,0.1)" }}>
           <span className="text-xl font-black" style={{ color: "#c9921a" }}>
             {product.price.toLocaleString("ar-MA")} درهم
           </span>

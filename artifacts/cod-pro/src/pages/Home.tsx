@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
 import { useStore } from "../context/StoreContext";
+import { Product } from "../context/StoreContext";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
+import ProductModal from "../components/ProductModal";
 import CartSidebar from "../components/CartSidebar";
 import WhatsAppButton from "../components/WhatsAppButton";
 
@@ -10,6 +12,7 @@ export default function Home() {
   const { products } = useStore();
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const productsRef = useRef<HTMLDivElement>(null);
 
   const filtered = products.filter((p) => {
@@ -46,7 +49,7 @@ export default function Home() {
           </h2>
           <div className="gold-line max-w-xs mx-auto" />
           <p className="mt-3 text-sm" style={{ color: "rgba(240,234,214,0.5)" }}>
-            {filtered.length} منتج متوفر
+            {filtered.length} منتج متوفر • اضغط على المنتج لعرض التفاصيل والطلب
           </p>
         </div>
 
@@ -54,7 +57,11 @@ export default function Home() {
         {filtered.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                onOpenModal={setSelectedProduct}
+              />
             ))}
           </div>
         ) : (
@@ -97,6 +104,10 @@ export default function Home() {
         </p>
       </footer>
 
+      <ProductModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
       <CartSidebar />
       <WhatsAppButton />
     </div>
