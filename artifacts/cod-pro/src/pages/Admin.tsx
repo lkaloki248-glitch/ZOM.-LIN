@@ -121,14 +121,14 @@ export default function Admin() {
   const [, navigate] = useLocation();
   const [authed, setAuthed] = useState(() => sessionStorage.getItem("codpro_admin_auth") === "1");
   const [form, setForm] = useState(EMPTY_FORM);
-
-  if (!authed) return <AdminLogin onSuccess={() => setAuthed(true)} />;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [importJson, setImportJson] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  if (!authed) return <AdminLogin onSuccess={() => setAuthed(true)} />;
 
   const notify = (msg: string) => {
     setNotification(msg);
