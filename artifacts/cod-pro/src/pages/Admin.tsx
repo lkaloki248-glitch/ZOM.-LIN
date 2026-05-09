@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useStore, Product } from "../context/StoreContext";
-import { Plus, Edit2, Trash2, Save, X, ArrowRight, Upload, Download, Lock, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, ArrowRight, Upload, Download, Lock, Eye, EyeOff, ImagePlus } from "lucide-react";
 
 const IMGBB_KEY = "fb99db1296d15c3b43676b06d8e66c51";
 const CATEGORIES = ["هوديات", "جاكيتات", "قمصان", "تيشرتات", "بناطيل"];
@@ -11,10 +11,12 @@ const EMPTY_FORM = {
   name: "",
   price: "",
   image: "",
+  images: [] as string[],
   category: "هوديات",
   description: "",
 };
 
+/* ── Login screen ── */
 function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
   const [, navigate] = useLocation();
   const [input, setInput] = useState("");
@@ -54,7 +56,6 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
           <div className="text-2xl font-black mb-1" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>COD PRO</div>
           <div className="text-sm" style={{ color: "rgba(240,234,214,0.5)" }}>لوحة الإدارة — الدخول مقيّد</div>
         </div>
-
         <div className="w-full flex flex-col gap-3">
           <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>كلمة المرور</label>
           <div className="relative">
@@ -70,19 +71,14 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
                 background: error ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.05)",
                 border: `1px solid ${error ? "rgba(239,68,68,0.5)" : "rgba(201,146,26,0.3)"}`,
                 color: "#f0ead6",
-                transition: "border-color 0.2s",
               }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPw((v) => !v)}
+            <button type="button" onClick={() => setShowPw((v) => !v)}
               className="absolute left-3 top-1/2 -translate-y-1/2"
-              style={{ color: "rgba(201,146,26,0.6)" }}
-            >
+              style={{ color: "rgba(201,146,26,0.6)" }}>
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-
           {error && (
             <p className="text-xs text-center" style={{ color: "#ef4444" }}>
               كلمة المرور غير صحيحة {attempts >= 3 && `(${5 - attempts} محاولات متبقية)`}
@@ -90,24 +86,19 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
           )}
           {locked && (
             <p className="text-xs text-center" style={{ color: "#ef4444" }}>
-              تم قفل الدخول مؤقتًا لمدة 30 ثانية بسبب محاولات متعددة
+              تم قفل الدخول مؤقتًا لمدة 30 ثانية
             </p>
           )}
-
-          <button
-            onClick={handleLogin}
-            disabled={locked || !input}
-            className="w-full py-3 rounded-xl font-black text-sm mt-1 transition-opacity"
+          <button onClick={handleLogin} disabled={locked || !input}
+            className="w-full py-3 rounded-xl font-black text-sm mt-1"
             style={{
               background: locked || !input ? "rgba(201,146,26,0.3)" : "linear-gradient(135deg, #c9921a, #e8b84b)",
               color: "#0a0a0b",
               cursor: locked || !input ? "not-allowed" : "pointer",
-            }}
-          >
+            }}>
             {locked ? "🔒 مقفل مؤقتًا..." : "دخول"}
           </button>
         </div>
-
         <button onClick={() => navigate("/")} className="text-xs" style={{ color: "rgba(240,234,214,0.3)" }}>
           ← العودة للمتجر
         </button>
@@ -116,6 +107,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+/* ── Main Admin ── */
 export default function Admin() {
   const { products, addProduct, editProduct, deleteProduct, importProducts } = useStore();
   const [, navigate] = useLocation();
@@ -123,6 +115,7 @@ export default function Admin() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingExtra, setUploadingExtra] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [importJson, setImportJson] = useState("");
   const [showImport, setShowImport] = useState(false);
@@ -135,27 +128,55 @@ export default function Admin() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  /* Upload primary image */
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("image", file);
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
       const json = await res.json();
       if (json.success) {
-        setForm((f) => ({ ...f, image: json.data.url }));
-        notify("✅ تم رفع الصورة بنجاح!");
-      } else {
-        notify("❌ فشل رفع الصورة");
-      }
-    } catch {
-      notify("❌ خطأ في الاتصال");
-    } finally {
-      setUploading(false);
-    }
+        const url = json.data.url;
+        setForm((f) => ({ ...f, image: url, images: f.images.includes(url) ? f.images : [url, ...f.images] }));
+        notify("✅ تم رفع الصورة الرئيسية!");
+      } else notify("❌ فشل رفع الصورة");
+    } catch { notify("❌ خطأ في الاتصال"); }
+    finally { setUploading(false); }
+  };
+
+  /* Upload additional image */
+  const handleExtraImageUpload = async (file: File) => {
+    setUploadingExtra(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.success) {
+        const url = json.data.url;
+        setForm((f) => ({ ...f, images: [...f.images, url] }));
+        notify("✅ تمت إضافة الصورة!");
+      } else notify("❌ فشل رفع الصورة");
+    } catch { notify("❌ خطأ في الاتصال"); }
+    finally { setUploadingExtra(false); }
+  };
+
+  const addImageUrl = (url: string) => {
+    if (!url.trim()) return;
+    setForm((f) => ({ ...f, images: [...f.images, url.trim()] }));
+  };
+
+  const removeImage = (idx: number) => {
+    setForm((f) => {
+      const newImages = f.images.filter((_, i) => i !== idx);
+      const newPrimary = newImages[0] || "";
+      return { ...f, images: newImages, image: idx === 0 ? newPrimary : f.image };
+    });
+  };
+
+  const setPrimaryImage = (url: string) => {
+    setForm((f) => ({ ...f, image: url }));
   };
 
   const handleSubmit = () => {
@@ -167,6 +188,7 @@ export default function Admin() {
       name: form.name,
       price: Number(form.price),
       image: form.image,
+      images: form.images.length > 0 ? form.images : [form.image],
       category: form.category,
       description: form.description,
     };
@@ -183,14 +205,18 @@ export default function Admin() {
 
   const startEdit = (p: Product) => {
     setEditingId(p.id);
-    setForm({ name: p.name, price: String(p.price), image: p.image, category: p.category, description: p.description || "" });
+    setForm({
+      name: p.name,
+      price: String(p.price),
+      image: p.image,
+      images: p.images || [p.image],
+      category: p.category,
+      description: p.description || "",
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-  };
+  const cancelEdit = () => { setEditingId(null); setForm(EMPTY_FORM); };
 
   const handleDelete = (id: string) => {
     if (deleteConfirm === id) {
@@ -209,11 +235,8 @@ export default function Admin() {
       const arr = Array.isArray(data) ? data : [data];
       importProducts(arr);
       notify(`✅ تم استيراد ${arr.length} منتج`);
-      setImportJson("");
-      setShowImport(false);
-    } catch {
-      notify("❌ صيغة JSON غير صحيحة");
-    }
+      setImportJson(""); setShowImport(false);
+    } catch { notify("❌ صيغة JSON غير صحيحة"); }
   };
 
   const handleExport = () => {
@@ -221,9 +244,7 @@ export default function Admin() {
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "codpro-products.json";
-    a.click();
+    a.href = url; a.download = "codpro-products.json"; a.click();
     notify("✅ تم تصدير المنتجات");
   };
 
@@ -240,7 +261,6 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen" style={{ background: "hsl(240 6% 4%)" }}>
-      {/* Notification */}
       {notification && (
         <div className="notification fixed top-4 right-4 z-50 px-5 py-3 rounded-xl font-semibold text-sm shadow-xl"
           style={{ background: "hsl(240 6% 12%)", border: "1px solid rgba(201,146,26,0.4)", color: "#f0ead6" }}>
@@ -248,7 +268,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Header */}
       <header className="sticky top-0 z-40 px-4 py-4 flex items-center justify-between"
         style={{ background: "rgba(10,10,12,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(201,146,26,0.3)" }}>
         <div className="flex items-center gap-3">
@@ -273,21 +292,17 @@ export default function Admin() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* Import JSON Panel */}
+        {/* Import JSON */}
         {showImport && (
           <div className="rounded-2xl p-6" style={{ background: "hsl(240 6% 8%)", border: "1px solid rgba(201,146,26,0.2)" }}>
             <h3 className="font-bold mb-3" style={{ color: "#c9921a" }}>استيراد منتجات (JSON)</h3>
             <p className="text-xs mb-3" style={{ color: "rgba(240,234,214,0.4)" }}>
-              الصيغة: {`[{"name":"اسم","price":299,"image":"url","category":"هوديات","description":"وصف"}]`}
+              {`[{"name":"اسم","price":299,"image":"url","images":["url1","url2"],"category":"هوديات","description":"وصف"}]`}
             </p>
-            <textarea
-              value={importJson}
-              onChange={(e) => setImportJson(e.target.value)}
-              rows={5}
+            <textarea value={importJson} onChange={(e) => setImportJson(e.target.value)} rows={5}
               placeholder="الصق كود JSON هنا..."
               className="w-full rounded-xl p-3 text-xs font-mono resize-y"
-              style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(201,146,26,0.2)", color: "#f0ead6", outline: "none" }}
-            />
+              style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(201,146,26,0.2)", color: "#f0ead6", outline: "none" }} />
             <div className="flex gap-2 mt-3">
               <button onClick={handleImport} className="btn-gold px-5 py-2 rounded-lg text-sm font-bold">استيراد</button>
               <button onClick={() => setShowImport(false)} className="px-5 py-2 rounded-lg text-sm"
@@ -299,7 +314,9 @@ export default function Admin() {
         {/* Add / Edit Form */}
         <div className="rounded-2xl p-6" style={{ background: "hsl(240 6% 8%)", border: "1px solid rgba(201,146,26,0.25)" }}>
           <h2 className="text-xl font-black mb-5 flex items-center gap-2" style={{ color: "#f0ead6" }}>
-            {editingId ? <><Edit2 size={20} style={{ color: "#c9921a" }} /> تعديل المنتج</> : <><Plus size={20} style={{ color: "#c9921a" }} /> إضافة منتج جديد</>}
+            {editingId
+              ? <><Edit2 size={20} style={{ color: "#c9921a" }} /> تعديل المنتج</>
+              : <><Plus size={20} style={{ color: "#c9921a" }} /> إضافة منتج جديد</>}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -307,16 +324,14 @@ export default function Admin() {
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>اسم المنتج *</label>
               <input type="text" placeholder="مثل: هودي بريميوم أسود" value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                style={inputStyle} />
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} style={inputStyle} />
             </div>
 
             {/* Price */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>السعر (درهم) *</label>
               <input type="number" placeholder="مثل: 299" value={form.price}
-                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                style={inputStyle} />
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} style={inputStyle} />
             </div>
 
             {/* Category */}
@@ -328,17 +343,23 @@ export default function Admin() {
               </select>
             </div>
 
-            {/* Image URL */}
+            {/* Description */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>رابط الصورة *</label>
-              <input type="url" placeholder="https://..." value={form.image}
-                onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                style={inputStyle} />
+              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>وصف المنتج</label>
+              <input type="text" placeholder="وصف مختصر للمنتج" value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} style={inputStyle} />
             </div>
 
-            {/* Image upload */}
+            {/* Primary image URL */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>أو ارفع صورة (imgbb)</label>
+              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>رابط الصورة الرئيسية *</label>
+              <input type="url" placeholder="https://..." value={form.image}
+                onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} style={inputStyle} />
+            </div>
+
+            {/* Upload primary image */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>أو ارفع الصورة الرئيسية</label>
               <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg text-sm"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px dashed rgba(201,146,26,0.4)", color: "#a0906a" }}>
                 <Upload size={16} />
@@ -347,19 +368,84 @@ export default function Admin() {
                   onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }}
                   disabled={uploading} />
               </label>
-              {form.image && (
-                <img src={form.image} alt="preview" className="w-20 h-20 object-cover rounded-lg mt-1"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              )}
+            </div>
+          </div>
+
+          {/* ── Multiple Images Section ── */}
+          <div className="mt-6 rounded-xl p-4 flex flex-col gap-4"
+            style={{ background: "rgba(201,146,26,0.04)", border: "1px solid rgba(201,146,26,0.15)" }}>
+            <div className="flex items-center gap-2">
+              <ImagePlus size={18} style={{ color: "#c9921a" }} />
+              <span className="text-sm font-bold" style={{ color: "#c9921a" }}>صور إضافية للمنزلق</span>
+              <span className="text-xs" style={{ color: "rgba(240,234,214,0.4)" }}>({form.images.length} صورة)</span>
             </div>
 
-            {/* Description */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>وصف المنتج</label>
-              <input type="text" placeholder="وصف مختصر للمنتج" value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                style={inputStyle} />
+            {/* Existing images grid */}
+            {form.images.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {form.images.map((url, i) => (
+                  <div key={i} className="relative group">
+                    <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg"
+                      style={{ border: url === form.image ? "2px solid #c9921a" : "2px solid rgba(255,255,255,0.08)" }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+                    {/* Primary badge */}
+                    {url === form.image && (
+                      <div className="absolute -top-1.5 -right-1.5 text-xs px-1 rounded-full font-bold"
+                        style={{ background: "#c9921a", color: "#0a0a0b", fontSize: "9px" }}>★</div>
+                    )}
+                    {/* Hover controls */}
+                    <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1"
+                      style={{ background: "rgba(10,10,12,0.8)" }}>
+                      {url !== form.image && (
+                        <button onClick={() => setPrimaryImage(url)} className="text-xs px-1.5 py-0.5 rounded font-bold"
+                          style={{ background: "#c9921a", color: "#0a0a0b", fontSize: "9px" }}>رئيسية</button>
+                      )}
+                      <button onClick={() => removeImage(i)} className="text-xs px-1.5 py-0.5 rounded font-bold"
+                        style={{ background: "rgba(239,68,68,0.8)", color: "#fff", fontSize: "9px" }}>حذف</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add image URL */}
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="أضف رابط صورة إضافية..."
+                id="extra-url-input"
+                style={{ ...inputStyle, flex: 1 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    addImageUrl((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = "";
+                  }
+                }}
+              />
+              <button
+                onClick={() => {
+                  const inp = document.getElementById("extra-url-input") as HTMLInputElement;
+                  addImageUrl(inp.value); inp.value = "";
+                }}
+                className="px-3 py-2 rounded-lg text-xs font-bold shrink-0"
+                style={{ background: "rgba(201,146,26,0.2)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.3)" }}>
+                إضافة
+              </button>
             </div>
+
+            {/* Upload additional image */}
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg text-sm w-fit"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(201,146,26,0.3)", color: "#a0906a" }}>
+              <ImagePlus size={15} />
+              {uploadingExtra ? "جاري الرفع..." : "ارفع صورة إضافية"}
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { if (e.target.files?.[0]) handleExtraImageUpload(e.target.files[0]); }}
+                disabled={uploadingExtra} />
+            </label>
+
+            <p className="text-xs" style={{ color: "rgba(240,234,214,0.3)" }}>
+              💡 الصورة المميزة بـ ★ هي الصورة الرئيسية. مرر على الصورة لتغييرها أو حذفها.
+            </p>
           </div>
 
           {/* Buttons */}
@@ -379,7 +465,8 @@ export default function Admin() {
 
         {/* Products Table */}
         <div className="rounded-2xl overflow-hidden" style={{ background: "hsl(240 6% 8%)", border: "1px solid rgba(201,146,26,0.2)" }}>
-          <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(201,146,26,0.15)" }}>
+          <div className="px-6 py-4 flex items-center justify-between"
+            style={{ borderBottom: "1px solid rgba(201,146,26,0.15)" }}>
             <h2 className="font-black text-lg" style={{ color: "#f0ead6" }}>المنتجات ({products.length})</h2>
           </div>
 
@@ -388,8 +475,16 @@ export default function Admin() {
             {products.map((p) => (
               <div key={p.id} className="flex gap-3 items-center p-3 rounded-xl"
                 style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,146,26,0.1)" }}>
-                <img src={p.image} alt={p.name} className="w-14 h-14 object-cover rounded-lg shrink-0"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100"; }} />
+                <div className="relative shrink-0">
+                  <img src={p.image} alt={p.name} className="w-14 h-14 object-cover rounded-lg"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100"; }} />
+                  {p.images && p.images.length > 1 && (
+                    <span className="absolute -bottom-1 -left-1 text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold"
+                      style={{ background: "#c9921a", color: "#0a0a0b", fontSize: "9px" }}>
+                      {p.images.length}
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate" style={{ color: "#f0ead6" }}>{p.name}</p>
                   <p className="text-xs" style={{ color: "#c9921a" }}>{p.price} درهم</p>
@@ -414,34 +509,48 @@ export default function Admin() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(201,146,26,0.1)" }}>
-                  {["الصورة", "الاسم", "السعر", "الفئة", "الوصف", "إجراءات"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-right text-xs font-semibold" style={{ color: "rgba(201,146,26,0.8)" }}>{h}</th>
+                  {["الصور", "الاسم", "السعر", "الفئة", "الوصف", "إجراءات"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-right text-xs font-semibold"
+                      style={{ color: "rgba(201,146,26,0.8)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {products.map((p, i) => (
-                  <tr key={p.id} style={{ borderBottom: i < products.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}
-                    className="transition-colors hover:bg-white/[0.02]">
+                  <tr key={p.id} className="transition-colors hover:bg-white/[0.02]"
+                    style={{ borderBottom: i < products.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                     <td className="px-4 py-3">
-                      <img src={p.image} alt={p.name} className="w-12 h-12 object-cover rounded-lg"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100"; }} />
+                      <div className="flex gap-1 items-center">
+                        <img src={p.image} alt={p.name} className="w-12 h-12 object-cover rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100"; }} />
+                        {p.images && p.images.length > 1 && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
+                            style={{ background: "rgba(201,146,26,0.15)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.2)" }}>
+                            +{p.images.length - 1}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold max-w-[160px] truncate" style={{ color: "#f0ead6" }}>{p.name}</td>
+                    <td className="px-4 py-3 text-sm font-semibold max-w-[140px] truncate" style={{ color: "#f0ead6" }}>{p.name}</td>
                     <td className="px-4 py-3 text-sm font-bold" style={{ color: "#c9921a" }}>{p.price} درهم</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs px-2 py-1 rounded-full" style={{ background: "rgba(201,146,26,0.1)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.2)" }}>
+                      <span className="text-xs px-2 py-1 rounded-full"
+                        style={{ background: "rgba(201,146,26,0.1)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.2)" }}>
                         {p.category}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs max-w-[180px] truncate" style={{ color: "rgba(240,234,214,0.5)" }}>{p.description || "—"}</td>
+                    <td className="px-4 py-3 text-xs max-w-[160px] truncate" style={{ color: "rgba(240,234,214,0.5)" }}>
+                      {p.description || "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => startEdit(p)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        <button onClick={() => startEdit(p)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
                           style={{ background: "rgba(201,146,26,0.15)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.2)" }}>
                           <Edit2 size={12} /> تعديل
                         </button>
-                        <button onClick={() => handleDelete(p.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        <button onClick={() => handleDelete(p.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
                           style={{ background: deleteConfirm === p.id ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
                           <Trash2 size={12} /> {deleteConfirm === p.id ? "تأكيد؟" : "حذف"}
                         </button>

@@ -7,6 +7,7 @@ import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
 import CartSidebar from "../components/CartSidebar";
 import WhatsAppButton from "../components/WhatsAppButton";
+import FakeNotifications from "../components/FakeNotifications";
 
 export default function Home() {
   const { products } = useStore();
@@ -110,6 +111,7 @@ export default function Home() {
       />
       <CartSidebar />
       <WhatsAppButton />
+      <FakeNotifications />
     </div>
   );
 }

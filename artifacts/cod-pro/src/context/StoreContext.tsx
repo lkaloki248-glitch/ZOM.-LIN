@@ -5,6 +5,7 @@ export interface Product {
   name: string;
   price: number;
   image: string;
+  images?: string[];
   category: string;
   description?: string;
 }
@@ -38,6 +39,11 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "هودي بريميوم أسود",
     price: 349,
     image: "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80",
+      "https://images.unsplash.com/photo-1578681994506-b8f463449011?w=500&q=80",
+      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&q=80",
+    ],
     category: "هوديات",
     description: "هودي فاخر بقماش ناعم ودافئ",
   },
@@ -46,6 +52,11 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "جاكيت جلد أصيل",
     price: 899,
     image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80",
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80",
+      "https://images.unsplash.com/photo-1520975954732-35dd22299614?w=500&q=80",
+    ],
     category: "جاكيتات",
     description: "جاكيت من الجلد الطبيعي عالي الجودة",
   },
@@ -54,6 +65,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "قميص كتاني كلاسيكي",
     price: 249,
     image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
+      "https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?w=500&q=80",
+    ],
     category: "قمصان",
     description: "قميص كتاني أنيق للمناسبات",
   },
@@ -62,6 +77,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "جينز سكيني أزرق",
     price: 399,
     image: "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
+    ],
     category: "بناطيل",
     description: "جينز ضيق عصري بقصة مثالية",
   },
@@ -70,6 +89,11 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "تيشرت أوفرسايز ذهبي",
     price: 199,
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80",
+      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
+    ],
     category: "تيشرتات",
     description: "تيشرت واسع بتصميم عصري",
   },
@@ -78,6 +102,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "جاكيت بومبر عسكري",
     price: 649,
     image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
+      "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
+    ],
     category: "جاكيتات",
     description: "جاكيت بومبر بتفاصيل عسكرية أنيقة",
   },
@@ -86,6 +114,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "سويتشيرت رمادي فاخر",
     price: 299,
     image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
+      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&q=80",
+    ],
     category: "هوديات",
     description: "سويتشيرت بقماش فليس ناعم",
   },
@@ -94,6 +126,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "بنطال كارغو بيج",
     price: 449,
     image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
+      "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
+    ],
     category: "بناطيل",
     description: "بنطال كارغو عصري بجيوب واسعة",
   },
@@ -102,6 +138,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "قميص مطبوع أسود",
     price: 229,
     image: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
+      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
+    ],
     category: "قمصان",
     description: "قميص بطبعة فنية حصرية",
   },
@@ -110,6 +150,10 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: "كوفي ووتر ريزيستنت",
     price: 549,
     image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
+    images: [
+      "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
+      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
+    ],
     category: "جاكيتات",
     description: "معطف خفيف مقاوم للماء والريح",
   },
