@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { X, ShoppingCart, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, ShoppingCart, Check, ChevronRight, ChevronLeft, ZoomIn } from "lucide-react";
 import { Product, useStore } from "../context/StoreContext";
 
 const WHATSAPP_NUMBER = "212614221016";
@@ -12,7 +12,6 @@ interface OrderForm {
   address: string;
   notes: string;
 }
-
 const EMPTY_ORDER: OrderForm = { name: "", phone: "", city: "", address: "", notes: "" };
 type Step = "details" | "order";
 
@@ -21,8 +20,15 @@ interface Props {
   onClose: () => void;
 }
 
-function ImageCarousel({ images }: { images: string[] }) {
+const WA_ICON = (
+  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+  </svg>
+);
+
+function ImageCarousel({ images, onClose }: { images: string[]; onClose: () => void }) {
   const [idx, setIdx] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   if (images.length === 0) return null;
@@ -30,9 +36,7 @@ function ImageCarousel({ images }: { images: string[] }) {
   const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
   const next = () => setIdx((i) => (i + 1) % images.length);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
@@ -41,15 +45,22 @@ function ImageCarousel({ images }: { images: string[] }) {
   };
 
   return (
-    <div className="relative w-full select-none" style={{ paddingTop: "100%" }}>
+    <div className="relative w-full overflow-hidden" style={{ height: "300px" }}>
       {/* Images */}
       {images.map((src, i) => (
         <img
           key={src + i}
           src={src}
           alt={`صورة ${i + 1}`}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-          style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? "auto" : "none" }}
+          className="absolute inset-0 w-full h-full transition-opacity duration-300"
+          style={{
+            objectFit: zoomed ? "contain" : "cover",
+            opacity: i === idx ? 1 : 0,
+            pointerEvents: i === idx ? "auto" : "none",
+            background: "#111113",
+            cursor: "pointer",
+          }}
+          onClick={() => setZoomed((z) => !z)}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
           onError={(e) => {
@@ -59,72 +70,69 @@ function ImageCarousel({ images }: { images: string[] }) {
         />
       ))}
 
-      {/* Swipe hint overlay (desktop drag) */}
+      {/* Gradient fade at bottom */}
       <div
-        className="absolute inset-0"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{ zIndex: 1 }}
+        className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+        style={{ background: "linear-gradient(to top, #111113, transparent)" }}
       />
 
-      {/* Arrows — only if more than 1 image */}
+      {/* Close button — top right */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full flex items-center justify-center"
+        style={{ background: "rgba(10,10,12,0.75)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.12)" }}
+      >
+        <X size={16} style={{ color: "#f0ead6" }} />
+      </button>
+
+      {/* Zoom hint — top left */}
+      <button
+        onClick={() => setZoomed((z) => !z)}
+        className="absolute top-3 left-3 z-20 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold"
+        style={{ background: "rgba(10,10,12,0.75)", backdropFilter: "blur(6px)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.3)" }}
+      >
+        <ZoomIn size={12} />
+        {zoomed ? "تصغير" : "تكبير"}
+      </button>
+
+      {/* Counter */}
+      {images.length > 1 && (
+        <div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-xs font-bold"
+          style={{ background: "rgba(10,10,12,0.7)", color: "rgba(240,234,214,0.7)", backdropFilter: "blur(6px)" }}
+        >
+          {idx + 1} / {images.length}
+        </div>
+      )}
+
+      {/* Arrows */}
       {images.length > 1 && (
         <>
-          <button
-            onClick={next}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all"
-            style={{ background: "rgba(10,10,12,0.7)", border: "1px solid rgba(201,146,26,0.3)" }}
-          >
+          <button onClick={next} className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(10,10,12,0.7)", border: "1px solid rgba(201,146,26,0.3)", backdropFilter: "blur(4px)" }}>
             <ChevronLeft size={16} style={{ color: "#c9921a" }} />
           </button>
-          <button
-            onClick={prev}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all"
-            style={{ background: "rgba(10,10,12,0.7)", border: "1px solid rgba(201,146,26,0.3)" }}
-          >
+          <button onClick={prev} className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(10,10,12,0.7)", border: "1px solid rgba(201,146,26,0.3)", backdropFilter: "blur(4px)" }}>
             <ChevronRight size={16} style={{ color: "#c9921a" }} />
           </button>
-
-          {/* Dot indicators */}
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIdx(i)}
-                className="rounded-full transition-all"
-                style={{
-                  width: i === idx ? "20px" : "6px",
-                  height: "6px",
-                  background: i === idx ? "#c9921a" : "rgba(255,255,255,0.35)",
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Counter */}
-          <div className="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-full text-xs font-bold"
-            style={{ background: "rgba(10,10,12,0.75)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.3)" }}>
-            {idx + 1}/{images.length}
-          </div>
         </>
       )}
 
-      {/* Thumbnail strip */}
+      {/* Thumbnail dots */}
       {images.length > 1 && (
-        <div className="absolute bottom-0 right-0 left-0 z-10 pb-10 px-2 hidden md:flex justify-center gap-1.5">
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-10" style={{ bottom: "10px" }}>
           {images.map((src, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
-              className="w-10 h-10 rounded-md overflow-hidden shrink-0 transition-all"
+              className="rounded-full transition-all overflow-hidden"
               style={{
-                border: i === idx ? "2px solid #c9921a" : "2px solid transparent",
-                opacity: i === idx ? 1 : 0.55,
+                width: i === idx ? "28px" : "7px",
+                height: "7px",
+                background: i === idx ? "#c9921a" : "rgba(255,255,255,0.35)",
               }}
-            >
-              <img src={src} alt="" className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            </button>
+            />
           ))}
         </div>
       )}
@@ -139,22 +147,31 @@ export default function ProductModal({ product, onClose }: Props) {
   const [orderForm, setOrderForm] = useState<OrderForm>(EMPTY_ORDER);
   const [addedToCart, setAddedToCart] = useState(false);
   const [formError, setFormError] = useState("");
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+    }
+  }, [product]);
 
   if (!product) return null;
 
-  const allImages = product.images && product.images.length > 0
-    ? product.images
-    : [product.image];
+  const allImages =
+    product.images && product.images.length > 0 ? product.images : [product.image];
 
   const handleClose = () => {
-    onClose();
+    setVisible(false);
     setTimeout(() => {
+      onClose();
       setStep("details");
       setSelectedSize("");
       setOrderForm(EMPTY_ORDER);
       setFormError("");
       setAddedToCart(false);
-    }, 300);
+    }, 280);
   };
 
   const handleAddToCart = () => {
@@ -169,168 +186,174 @@ export default function ProductModal({ product, onClose }: Props) {
     if (!orderForm.city.trim()) { setFormError("يرجى إدخال المدينة"); return; }
     if (!selectedSize) { setFormError("يرجى اختيار المقاس"); return; }
     setFormError("");
-
     const lines = [
-      "🛍 *طلب جديد — COD PRO*",
-      "",
+      "🛍 *طلب جديد — COD PRO*", "",
       `📦 *المنتج:* ${product.name}`,
       `📐 *المقاس:* ${selectedSize}`,
       `💰 *السعر:* ${product.price.toLocaleString("ar-MA")} درهم`,
       product.description ? `📝 *الوصف:* ${product.description}` : "",
-      "",
-      "━━━━━━━━━━━━━━━",
+      "", "━━━━━━━━━━━━━━━",
       "👤 *معلومات العميل:*",
-      `الاسم: ${orderForm.name}`,
-      `الهاتف: ${orderForm.phone}`,
-      `المدينة: ${orderForm.city}`,
+      `الاسم: ${orderForm.name}`, `الهاتف: ${orderForm.phone}`, `المدينة: ${orderForm.city}`,
       orderForm.address ? `العنوان: ${orderForm.address}` : "",
       orderForm.notes ? `ملاحظات: ${orderForm.notes}` : "",
-      "",
-      "🚚 الدفع عند الاستلام",
-      "أرجو تأكيد الطلب. شكراً 🙏",
+      "", "🚚 الدفع عند الاستلام", "أرجو تأكيد الطلب. شكراً 🙏",
     ].filter(Boolean).join("\n");
-
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines)}`, "_blank");
     handleClose();
   };
 
-  const inputStyle = {
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(201,146,26,0.25)",
+  const inputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.1)",
     color: "#f0ead6",
-    borderRadius: "0.6rem",
-    padding: "0.65rem 0.9rem",
+    borderRadius: "10px",
+    padding: "0.7rem 0.9rem",
     width: "100%",
     outline: "none",
-    fontSize: "0.9rem",
+    fontSize: "0.875rem",
   };
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50"
-        style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)" }}
+        className="fixed inset-0 z-50 transition-opacity duration-300"
+        style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", opacity: visible ? 1 : 0 }}
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 pointer-events-none">
+      {/* Sheet — slides up from bottom */}
+      <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none" style={{ top: 0, alignItems: "flex-end" }}>
         <div
-          className="w-full max-w-2xl max-h-[94vh] overflow-y-auto rounded-2xl flex flex-col pointer-events-auto"
+          className="w-full pointer-events-auto flex flex-col"
           style={{
-            background: "hsl(240 6% 7%)",
-            border: "1px solid rgba(201,146,26,0.3)",
-            boxShadow: "0 25px 60px rgba(0,0,0,0.7)",
+            maxWidth: "520px",
+            maxHeight: "92vh",
+            borderRadius: "20px 20px 0 0",
+            background: "#111113",
+            boxShadow: "0 -4px 40px rgba(0,0,0,0.7)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderBottom: "none",
+            transition: "transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s ease",
+            transform: visible ? "translateY(0)" : "translateY(60px)",
+            opacity: visible ? 1 : 0,
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── STEP 1: PRODUCT DETAILS ── */}
           {step === "details" && (
             <>
-              <div className="flex items-center justify-between px-4 py-3 shrink-0"
-                style={{ borderBottom: "1px solid rgba(201,146,26,0.15)" }}>
-                <span className="text-xs px-3 py-1 rounded-full font-semibold"
-                  style={{ background: "rgba(201,146,26,0.1)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.25)" }}>
-                  {product.category}
-                </span>
-                <button onClick={handleClose} className="p-1.5 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <X size={18} style={{ color: "#f0ead6" }} />
-                </button>
+              {/* Image — fixed height, no header bar above it */}
+              <div className="shrink-0 overflow-hidden" style={{ borderRadius: "20px 20px 0 0" }}>
+                <ImageCarousel images={allImages} onClose={handleClose} />
               </div>
 
-              <div className="flex flex-col md:flex-row">
-                {/* Carousel */}
-                <div className="md:w-5/12 shrink-0 overflow-hidden"
-                  style={{ borderRadius: "0 0 0 1rem" }}>
-                  <ImageCarousel images={allImages} />
+              {/* Scrollable info */}
+              <div className="overflow-y-auto flex-1 px-5 pt-4 pb-2 flex flex-col gap-4">
+
+                {/* Category + name */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold" style={{ color: "rgba(201,146,26,0.7)" }}>
+                    {product.category}
+                  </span>
+                  <h2 className="text-lg font-black leading-snug" style={{ color: "#f0ead6" }}>
+                    {product.name}
+                  </h2>
                 </div>
 
-                {/* Info */}
-                <div className="flex-1 p-5 flex flex-col gap-4">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-black leading-snug mb-2" style={{ color: "#f0ead6" }}>
-                      {product.name}
-                    </h2>
-                    <div className="text-3xl font-black" style={{ color: "#c9921a" }}>
-                      {product.price.toLocaleString("ar-MA")}
-                      <span className="text-base font-semibold mr-1" style={{ color: "rgba(201,146,26,0.7)" }}>درهم</span>
-                    </div>
+                {/* Price */}
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black" style={{ color: "#c9921a" }}>
+                    {product.price.toLocaleString("ar-MA")}
+                  </span>
+                  <span className="text-sm" style={{ color: "rgba(201,146,26,0.55)" }}>درهم</span>
+                  <div className="flex items-center gap-2 mr-auto">
+                    <span className="text-xs" style={{ color: "rgba(240,234,214,0.35)" }}>🚚 الدفع عند الاستلام</span>
                   </div>
+                </div>
 
-                  {product.description && (
-                    <div className="p-3 rounded-xl text-sm leading-relaxed"
-                      style={{ background: "rgba(255,255,255,0.04)", color: "rgba(240,234,214,0.75)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      {product.description}
-                    </div>
-                  )}
+                {/* Description */}
+                {product.description && (
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(240,234,214,0.55)", lineHeight: "1.7" }}>
+                    {product.description}
+                  </p>
+                )}
 
-                  <div className="flex flex-col gap-1.5 text-sm">
-                    {[
-                      { icon: "🚚", text: "توصيل لجميع أنحاء المغرب" },
-                      { icon: "💳", text: "الدفع عند الاستلام (COD)" },
-                      { icon: "↩️", text: "إرجاع مجاني خلال 7 أيام" },
-                    ].map((item) => (
-                      <div key={item.text} className="flex items-center gap-2" style={{ color: "rgba(240,234,214,0.55)" }}>
-                        <span>{item.icon}</span><span>{item.text}</span>
-                      </div>
+                {/* Divider */}
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)" }} />
+
+                {/* Size picker */}
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold" style={{ color: "#f0ead6" }}>اختر المقاس</span>
+                    {selectedSize && (
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(201,146,26,0.15)", color: "#c9921a" }}>
+                        {selectedSize} ✓
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {SIZES.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => { setSelectedSize(size); setFormError(""); }}
+                        className="font-bold text-sm transition-all"
+                        style={{
+                          width: "44px",
+                          height: "38px",
+                          borderRadius: "9px",
+                          ...(selectedSize === size
+                            ? { background: "linear-gradient(135deg,#c9921a,#e8b84b)", color: "#0a0a0b", boxShadow: "0 3px 12px rgba(201,146,26,0.3)" }
+                            : { background: "rgba(255,255,255,0.05)", color: "rgba(240,234,214,0.5)", border: "1px solid rgba(255,255,255,0.08)" }
+                          ),
+                        }}
+                      >
+                        {size}
+                      </button>
                     ))}
                   </div>
-
-                  {/* Size selector */}
-                  <div>
-                    <p className="text-sm font-semibold mb-2" style={{ color: "#c9921a" }}>
-                      اختر المقاس {selectedSize && <span style={{ color: "#f0ead6" }}>— {selectedSize}</span>}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {SIZES.map((size) => (
-                        <button key={size} onClick={() => setSelectedSize(size)}
-                          className="w-11 h-9 rounded-lg text-sm font-bold transition-all"
-                          style={
-                            selectedSize === size
-                              ? { background: "linear-gradient(135deg,#c9921a,#e8b84b)", color: "#0a0a0b" }
-                              : { background: "rgba(255,255,255,0.05)", color: "rgba(240,234,214,0.7)", border: "1px solid rgba(201,146,26,0.2)" }
-                          }>
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {formError && (
-                    <p className="text-xs" style={{ color: "#ef4444" }}>{formError}</p>
-                  )}
-
-                  {/* Action buttons */}
-                  <div className="flex gap-3 mt-auto">
-                    <button
-                      onClick={() => {
-                        if (!selectedSize) { setFormError("يرجى اختيار المقاس أولاً"); return; }
-                        setFormError(""); setStep("order");
-                      }}
-                      className="flex-1 py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2"
-                      style={{ background: "linear-gradient(135deg, #25D366, #128C7E)", color: "#fff" }}
-                    >
-                      <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                      </svg>
-                      اطلب الآن
-                    </button>
-                    <button
-                      onClick={handleAddToCart}
-                      className="px-4 py-3 rounded-xl font-bold flex items-center gap-1.5 text-sm"
-                      style={
-                        addedToCart
-                          ? { background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.4)" }
-                          : { background: "rgba(201,146,26,0.12)", color: "#c9921a", border: "1px solid rgba(201,146,26,0.3)" }
-                      }
-                    >
-                      {addedToCart ? <Check size={18} /> : <ShoppingCart size={18} />}
-                      <span className="hidden sm:inline">{addedToCart ? "تمت!" : "سلة"}</span>
-                    </button>
-                  </div>
                 </div>
+
+                {/* Error message */}
+                {formError && (
+                  <p className="text-xs text-center py-2 rounded-xl"
+                    style={{ color: "#f87171", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                    ⚠️ {formError}
+                  </p>
+                )}
+              </div>
+
+              {/* Sticky CTA bar */}
+              <div
+                className="shrink-0 px-5 py-4 flex gap-3"
+                style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "#111113" }}
+              >
+                <button
+                  onClick={() => {
+                    if (!selectedSize) { setFormError("يرجى اختيار المقاس أولاً"); return; }
+                    setFormError("");
+                    setStep("order");
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 font-black text-sm py-3.5 rounded-2xl transition-all active:scale-[0.98]"
+                  style={{ background: "linear-gradient(135deg,#25D366,#128C7E)", color: "#fff", boxShadow: "0 4px 18px rgba(37,211,102,0.2)" }}
+                >
+                  {WA_ICON}
+                  اطلب الآن
+                </button>
+                <button
+                  onClick={handleAddToCart}
+                  className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
+                  style={
+                    addedToCart
+                      ? { background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1.5px solid rgba(34,197,94,0.3)" }
+                      : { background: "rgba(201,146,26,0.08)", color: "#c9921a", border: "1.5px solid rgba(201,146,26,0.25)" }
+                  }
+                >
+                  {addedToCart ? <Check size={18} /> : <ShoppingCart size={18} />}
+                  <span>{addedToCart ? "أُضيف" : "السلة"}</span>
+                </button>
               </div>
             </>
           )}
@@ -338,98 +361,126 @@ export default function ProductModal({ product, onClose }: Props) {
           {/* ── STEP 2: ORDER FORM ── */}
           {step === "order" && (
             <>
-              <div className="flex items-center justify-between px-4 py-3 shrink-0"
-                style={{ borderBottom: "1px solid rgba(201,146,26,0.15)" }}>
+              {/* Header bar */}
+              <div
+                className="flex items-center justify-between px-5 py-4 shrink-0"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+              >
                 <div className="flex items-center gap-3">
-                  <button onClick={() => { setStep("details"); setFormError(""); }}
-                    className="p-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <ChevronRight size={18} style={{ color: "#f0ead6" }} />
+                  <button
+                    onClick={() => { setStep("details"); setFormError(""); }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}
+                  >
+                    <ChevronRight size={17} style={{ color: "rgba(240,234,214,0.6)" }} />
                   </button>
-                  <span className="font-bold text-base" style={{ color: "#f0ead6" }}>تفاصيل الطلب</span>
+                  <span className="font-black text-base" style={{ color: "#f0ead6" }}>تفاصيل الطلب</span>
                 </div>
-                <button onClick={handleClose} className="p-1.5 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <X size={18} style={{ color: "#f0ead6" }} />
+                <button
+                  onClick={handleClose}
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}
+                >
+                  <X size={16} style={{ color: "rgba(240,234,214,0.6)" }} />
                 </button>
               </div>
 
-              <div className="p-5 flex flex-col gap-4">
-                {/* Order summary */}
-                <div className="flex gap-4 p-3 rounded-xl"
-                  style={{ background: "rgba(201,146,26,0.06)", border: "1px solid rgba(201,146,26,0.2)" }}>
-                  <img src={allImages[0]} alt={product.name} className="w-14 h-14 object-cover rounded-lg shrink-0"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"; }} />
-                  <div className="flex flex-col justify-center gap-1">
-                    <span className="font-bold text-sm" style={{ color: "#f0ead6" }}>{product.name}</span>
-                    <span className="text-xs" style={{ color: "rgba(240,234,214,0.5)" }}>المقاس: {selectedSize}</span>
+              {/* Scrollable form */}
+              <div className="overflow-y-auto flex-1 px-5 py-4 flex flex-col gap-4">
+
+                {/* Mini product card */}
+                <div className="flex gap-3 p-3 rounded-xl items-center"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <img
+                    src={allImages[0]}
+                    alt={product.name}
+                    className="w-14 h-14 rounded-lg shrink-0 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"; }}
+                  />
+                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                    <span className="font-bold text-sm truncate" style={{ color: "#f0ead6" }}>{product.name}</span>
+                    <span className="text-xs" style={{ color: "rgba(240,234,214,0.4)" }}>المقاس: {selectedSize}</span>
                     <span className="font-black text-base" style={{ color: "#c9921a" }}>
                       {product.price.toLocaleString("ar-MA")} درهم
                     </span>
                   </div>
                 </div>
 
-                {/* Step indicator */}
-                <div className="flex items-center gap-2 text-xs" style={{ color: "rgba(240,234,214,0.4)" }}>
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: "rgba(201,146,26,0.2)", color: "#c9921a" }}>1</span>
-                  <span>اختيار المنتج</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(201,146,26,0.2)" }} />
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: "linear-gradient(135deg,#c9921a,#e8b84b)", color: "#0a0a0b" }}>2</span>
-                  <span style={{ color: "#c9921a" }}>بياناتك</span>
-                </div>
-
+                {/* Form fields */}
                 <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>الاسم الكامل *</label>
-                    <input type="text" placeholder="مثال: محمد أمين" value={orderForm.name}
-                      onChange={(e) => setOrderForm((f) => ({ ...f, name: e.target.value }))}
-                      style={inputStyle} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>رقم الهاتف *</label>
-                    <input type="tel" placeholder="0612345678" value={orderForm.phone}
-                      onChange={(e) => setOrderForm((f) => ({ ...f, phone: e.target.value }))}
-                      style={{ ...inputStyle, direction: "ltr", textAlign: "right" }} />
-                  </div>
+                  {[
+                    { label: "الاسم الكامل", key: "name", placeholder: "مثال: محمد أمين", required: true, type: "text" },
+                    { label: "رقم الهاتف", key: "phone", placeholder: "0612345678", required: true, type: "tel" },
+                  ].map(({ label, key, placeholder, required, type }) => (
+                    <div key={key} className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold" style={{ color: "rgba(240,234,214,0.6)" }}>
+                        {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
+                      </label>
+                      <input
+                        type={type}
+                        placeholder={placeholder}
+                        value={orderForm[key as keyof OrderForm]}
+                        onChange={(e) => setOrderForm((f) => ({ ...f, [key]: e.target.value }))}
+                        style={{ ...inputStyle, direction: key === "phone" ? "ltr" : "rtl", textAlign: "right" }}
+                      />
+                    </div>
+                  ))}
+
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold" style={{ color: "#c9921a" }}>المدينة *</label>
-                      <input type="text" placeholder="الدار البيضاء" value={orderForm.city}
-                        onChange={(e) => setOrderForm((f) => ({ ...f, city: e.target.value }))}
-                        style={inputStyle} />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold" style={{ color: "rgba(201,146,26,0.6)" }}>الحي / الشارع</label>
-                      <input type="text" placeholder="اختياري" value={orderForm.address}
-                        onChange={(e) => setOrderForm((f) => ({ ...f, address: e.target.value }))}
-                        style={inputStyle} />
-                    </div>
+                    {[
+                      { label: "المدينة", key: "city", placeholder: "الدار البيضاء", required: true },
+                      { label: "الحي / الشارع", key: "address", placeholder: "اختياري", required: false },
+                    ].map(({ label, key, placeholder, required }) => (
+                      <div key={key} className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold" style={{ color: "rgba(240,234,214,0.6)" }}>
+                          {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={placeholder}
+                          value={orderForm[key as keyof OrderForm]}
+                          onChange={(e) => setOrderForm((f) => ({ ...f, [key]: e.target.value }))}
+                          style={inputStyle}
+                        />
+                      </div>
+                    ))}
                   </div>
+
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold" style={{ color: "rgba(201,146,26,0.6)" }}>ملاحظات (اختياري)</label>
-                    <input type="text" placeholder="أي تفاصيل إضافية..." value={orderForm.notes}
+                    <label className="text-xs font-semibold" style={{ color: "rgba(240,234,214,0.4)" }}>ملاحظات (اختياري)</label>
+                    <input
+                      type="text"
+                      placeholder="أي تفاصيل إضافية..."
+                      value={orderForm.notes}
                       onChange={(e) => setOrderForm((f) => ({ ...f, notes: e.target.value }))}
-                      style={inputStyle} />
+                      style={inputStyle}
+                    />
                   </div>
                 </div>
 
+                {/* Error */}
                 {formError && (
-                  <p className="text-xs text-center py-2 rounded-lg"
-                    style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <p className="text-xs text-center py-2 rounded-xl"
+                    style={{ color: "#f87171", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)" }}>
                     ⚠️ {formError}
                   </p>
                 )}
+              </div>
 
-                <button onClick={handleConfirmOrder}
-                  className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #25D366, #128C7E)", color: "#fff", boxShadow: "0 4px 20px rgba(37,211,102,0.25)" }}>
-                  <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                  </svg>
+              {/* Sticky confirm CTA */}
+              <div
+                className="shrink-0 px-5 py-4 flex flex-col gap-2"
+                style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "#111113" }}
+              >
+                <button
+                  onClick={handleConfirmOrder}
+                  className="w-full flex items-center justify-center gap-2 font-black text-sm py-3.5 rounded-2xl transition-all active:scale-[0.98]"
+                  style={{ background: "linear-gradient(135deg,#25D366,#128C7E)", color: "#fff", boxShadow: "0 4px 18px rgba(37,211,102,0.2)" }}
+                >
+                  {WA_ICON}
                   تأكيد الطلب عبر واتساب
                 </button>
-                <p className="text-xs text-center" style={{ color: "rgba(240,234,214,0.3)" }}>
+                <p className="text-xs text-center" style={{ color: "rgba(240,234,214,0.2)" }}>
                   سيتم فتح واتساب تلقائياً مع تفاصيل طلبك
                 </p>
               </div>
