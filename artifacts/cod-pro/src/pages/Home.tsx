@@ -157,16 +157,6 @@ export default function Home() {
       <footer className="text-center py-10 mt-8" style={{ borderTop: "1px solid rgba(201,146,26,0.15)" }}>
         <div className="text-2xl font-black mb-2" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>COD PRO</div>
         <p className="text-xs mb-3" style={{ color: "rgba(240,234,214,0.4)" }}>متجر الأزياء الفاخرة في المغرب</p>
-        <a href="https://wa.me/212614221016"
-          className="inline-flex items-center gap-2 text-xs"
-          style={{ color: "rgba(201,146,26,0.65)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" strokeWidth="1.8" />
-            <line x1="9" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="12" cy="17" r="1.2" fill="currentColor" />
-          </svg>
-          +212 614 221 016
-        </a>
         <p className="text-xs mt-5" style={{ color: "rgba(240,234,214,0.18)" }}>
           © 2025 COD PRO. جميع الحقوق محفوظة.
         </p>
