@@ -99,40 +99,66 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const totalPrice = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const addProduct = async (product: Omit<Product, "id">) => {
-    const res = await fetch(`${API_BASE}/products`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product),
-    });
-    if (!res.ok) throw new Error("Failed to add product");
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(product),
+      });
+    } catch {
+      throw new Error("تعذّر الاتصال بالخادم — تأكد من الاتصال بالإنترنت");
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? `خطأ من الخادم (${res.status})`);
+    }
     const newProduct: Product = await res.json();
     setProducts((prev) => [...prev, newProduct]);
   };
 
   const editProduct = async (id: string, product: Omit<Product, "id">) => {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product),
-    });
-    if (!res.ok) throw new Error("Failed to update product");
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(product),
+      });
+    } catch {
+      throw new Error("تعذّر الاتصال بالخادم — تأكد من الاتصال بالإنترنت");
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? `خطأ من الخادم (${res.status})`);
+    }
     const updated: Product = await res.json();
     setProducts((prev) => prev.map((p) => p.id === id ? updated : p));
   };
 
   const deleteProduct = async (id: string) => {
-    const res = await fetch(`${API_BASE}/products/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Failed to delete product");
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/products/${id}`, { method: "DELETE" });
+    } catch {
+      throw new Error("تعذّر الاتصال بالخادم");
+    }
+    if (!res.ok) throw new Error(`خطأ من الخادم (${res.status})`);
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const importProducts = async (newProducts: Omit<Product, "id">[]) => {
-    const res = await fetch(`${API_BASE}/products/bulk`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProducts),
-    });
-    if (!res.ok) throw new Error("Failed to import products");
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/products/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProducts),
+      });
+    } catch {
+      throw new Error("تعذّر الاتصال بالخادم");
+    }
+    if (!res.ok) throw new Error(`خطأ من الخادم (${res.status})`);
     const imported: Product[] = await res.json();
     setProducts((prev) => [...prev, ...imported]);
   };

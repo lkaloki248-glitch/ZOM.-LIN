@@ -202,8 +202,8 @@ export default function Admin() {
         notify("✅ تم إضافة المنتج");
       }
       setForm(EMPTY_FORM);
-    } catch {
-      notify("❌ حدث خطأ، يرجى المحاولة مجدداً");
+    } catch (err) {
+      notify(`❌ ${err instanceof Error ? err.message : "حدث خطأ، يرجى المحاولة مجدداً"}`);
     }
   };
 
