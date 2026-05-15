@@ -56,7 +56,7 @@ export default function ProductCard({ product, onOpenModal }: Props) {
       {/* Info */}
       <div className="p-4 flex flex-col flex-1 gap-2">
         <h3 className="font-bold text-base leading-snug" style={{ color: "#f0ead6" }}>
-          {product.name}
+          {product.name.split(" ").slice(0, 4).join(" ")}{product.name.split(" ").length > 4 ? "…" : ""}
         </h3>
         {product.description && (
           <p className="text-xs line-clamp-1" style={{ color: "rgba(240,234,214,0.45)" }}>
