@@ -11,7 +11,6 @@ export default function ProductCard({ product, onOpenModal }: Props) {
   const { addToCart, setCartOpen } = useStore();
   const [added, setAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -19,11 +18,6 @@ export default function ProductCard({ product, onOpenModal }: Props) {
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
     setCartOpen(true);
-  };
-
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpanded((v) => !v);
   };
 
   return (
@@ -61,33 +55,14 @@ export default function ProductCard({ product, onOpenModal }: Props) {
 
       {/* Info */}
       <div className="p-4 flex flex-col flex-1 gap-2">
-        {/* Title */}
-        <h3
-          className={`font-bold text-base leading-snug${expanded ? "" : " line-clamp-1"}`}
-          style={{ color: "#f0ead6" }}
-        >
-          {product.name}
+        <h3 className="font-bold text-base leading-snug" style={{ color: "#f0ead6" }}>
+          {product.name.split(" ").slice(0, 4).join(" ")}{product.name.split(" ").length > 4 ? "…" : ""}
         </h3>
-
-        {/* Description */}
         {product.description && (
-          <p
-            className={`text-xs${expanded ? "" : " line-clamp-1"}`}
-            style={{ color: "rgba(240,234,214,0.45)" }}
-          >
+          <p className="text-xs line-clamp-1" style={{ color: "rgba(240,234,214,0.45)" }}>
             {product.description}
           </p>
         )}
-
-        {/* Show More / Show Less */}
-        <button
-          onClick={handleToggle}
-          className="self-start text-xs font-semibold mt-0.5 transition-colors"
-          style={{ color: "#c9921a", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-        >
-          {expanded ? "عرض أقل ▲" : "عرض المزيد ▼"}
-        </button>
-
         <div className="mt-auto flex items-center justify-between pt-3"
           style={{ borderTop: "1px solid rgba(201,146,26,0.1)" }}>
           <span className="text-xl font-black" style={{ color: "#c9921a" }}>
