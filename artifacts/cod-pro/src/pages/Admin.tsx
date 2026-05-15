@@ -53,7 +53,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
           <Lock size={28} style={{ color: "#c9921a" }} />
         </div>
         <div className="text-center">
-          <div className="text-2xl font-black mb-1" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>COD PRO</div>
+          <div className="text-2xl font-black mb-1" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>Outfit Pro</div>
           <div className="text-sm" style={{ color: "rgba(240,234,214,0.5)" }}>لوحة الإدارة — الدخول مقيّد</div>
         </div>
         <div className="w-full flex flex-col gap-3">

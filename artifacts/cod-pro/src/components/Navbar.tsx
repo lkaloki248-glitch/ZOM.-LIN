@@ -23,7 +23,7 @@ export default function Navbar({ activeCategory, setActiveCategory, searchQuery,
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <button onClick={() => navigate("/")} className="flex items-center gap-2 shrink-0">
-          <span className="text-2xl font-black tracking-widest" style={{ color: "#c9921a", fontFamily: "'Cairo', sans-serif", letterSpacing: "0.15em" }}>COD PRO</span>
+          <span className="text-2xl font-black tracking-widest" style={{ color: "#c9921a", fontFamily: "'Cairo', sans-serif", letterSpacing: "0.15em" }}>Outfit Pro</span>
         </button>
 
         {/* Search bar - desktop */}

@@ -12,7 +12,7 @@ export default function CartSidebar() {
       (item) => `• ${item.name} × ${item.quantity} = ${(item.price * item.quantity).toLocaleString("ar-MA")} درهم`
     );
     const msg = [
-      "🛍 طلب جديد من COD PRO:",
+      "🛍 طلب جديد من Outfit Pro:",
       "",
       ...lines,
       "",

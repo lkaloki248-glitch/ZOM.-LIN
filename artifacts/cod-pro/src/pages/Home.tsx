@@ -155,10 +155,10 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="text-center py-10 mt-8" style={{ borderTop: "1px solid rgba(201,146,26,0.15)" }}>
-        <div className="text-2xl font-black mb-2" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>COD PRO</div>
+        <div className="text-2xl font-black mb-2" style={{ color: "#c9921a", letterSpacing: "0.15em" }}>Outfit Pro</div>
         <p className="text-xs mb-3" style={{ color: "rgba(240,234,214,0.4)" }}>متجر الأزياء الفاخرة في المغرب</p>
         <p className="text-xs mt-5" style={{ color: "rgba(240,234,214,0.18)" }}>
-          © 2025 COD PRO. جميع الحقوق محفوظة.
+          © 2025 Outfit Pro. جميع الحقوق محفوظة.
         </p>
       </footer>
 

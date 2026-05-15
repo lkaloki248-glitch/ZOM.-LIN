@@ -187,7 +187,7 @@ export default function ProductModal({ product, onClose }: Props) {
     if (!selectedSize) { setFormError("يرجى اختيار المقاس"); return; }
     setFormError("");
     const lines = [
-      "🛍 *طلب جديد — COD PRO*", "",
+      "🛍 *طلب جديد — Outfit Pro*", "",
       `📦 *المنتج:* ${product.name}`,
       `📐 *المقاس:* ${selectedSize}`,
       `💰 *السعر:* ${product.price.toLocaleString("ar-MA")} درهم`,
