@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
 export interface Product {
   id: string;
@@ -16,6 +16,7 @@ export interface CartItem extends Product {
 
 interface StoreContextType {
   products: Product[];
+  productsLoading: boolean;
   cart: CartItem[];
   cartOpen: boolean;
   addToCart: (product: Product) => void;
@@ -25,149 +26,20 @@ interface StoreContextType {
   setCartOpen: (open: boolean) => void;
   totalItems: number;
   totalPrice: number;
-  addProduct: (product: Omit<Product, "id">) => void;
-  editProduct: (id: string, product: Omit<Product, "id">) => void;
-  deleteProduct: (id: string) => void;
-  importProducts: (products: Omit<Product, "id">[]) => void;
+  addProduct: (product: Omit<Product, "id">) => Promise<void>;
+  editProduct: (id: string, product: Omit<Product, "id">) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  importProducts: (products: Omit<Product, "id">[]) => Promise<void>;
+  refreshProducts: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: "1",
-    name: "هودي بريميوم أسود",
-    price: 349,
-    image: "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80",
-      "https://images.unsplash.com/photo-1578681994506-b8f463449011?w=500&q=80",
-      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&q=80",
-    ],
-    category: "هوديات",
-    description: "هودي فاخر بقماش ناعم ودافئ",
-  },
-  {
-    id: "2",
-    name: "جاكيت جلد أصيل",
-    price: 899,
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80",
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80",
-      "https://images.unsplash.com/photo-1520975954732-35dd22299614?w=500&q=80",
-    ],
-    category: "جاكيتات",
-    description: "جاكيت من الجلد الطبيعي عالي الجودة",
-  },
-  {
-    id: "3",
-    name: "قميص كتاني كلاسيكي",
-    price: 249,
-    image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
-      "https://images.unsplash.com/photo-1607345366928-199ea26cfe3e?w=500&q=80",
-    ],
-    category: "قمصان",
-    description: "قميص كتاني أنيق للمناسبات",
-  },
-  {
-    id: "4",
-    name: "جينز سكيني أزرق",
-    price: 399,
-    image: "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
-      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
-    ],
-    category: "بناطيل",
-    description: "جينز ضيق عصري بقصة مثالية",
-  },
-  {
-    id: "5",
-    name: "تيشرت أوفرسايز ذهبي",
-    price: 199,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80",
-      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
-      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
-    ],
-    category: "تيشرتات",
-    description: "تيشرت واسع بتصميم عصري",
-  },
-  {
-    id: "6",
-    name: "جاكيت بومبر عسكري",
-    price: 649,
-    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
-      "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
-    ],
-    category: "جاكيتات",
-    description: "جاكيت بومبر بتفاصيل عسكرية أنيقة",
-  },
-  {
-    id: "7",
-    name: "سويتشيرت رمادي فاخر",
-    price: 299,
-    image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80",
-      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&q=80",
-    ],
-    category: "هوديات",
-    description: "سويتشيرت بقماش فليس ناعم",
-  },
-  {
-    id: "8",
-    name: "بنطال كارغو بيج",
-    price: 449,
-    image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80",
-      "https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=500&q=80",
-    ],
-    category: "بناطيل",
-    description: "بنطال كارغو عصري بجيوب واسعة",
-  },
-  {
-    id: "9",
-    name: "قميص مطبوع أسود",
-    price: 229,
-    image: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&q=80",
-      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80",
-    ],
-    category: "قمصان",
-    description: "قميص بطبعة فنية حصرية",
-  },
-  {
-    id: "10",
-    name: "كوفي ووتر ريزيستنت",
-    price: 549,
-    image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&q=80",
-      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80",
-    ],
-    category: "جاكيتات",
-    description: "معطف خفيف مقاوم للماء والريح",
-  },
-];
+const API_BASE = "/api";
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem("codpro_products");
-      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
-    } catch {
-      return DEFAULT_PRODUCTS;
-    }
-  });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -180,9 +52,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const [cartOpen, setCartOpen] = useState(false);
 
+  const fetchProducts = useCallback(async () => {
+    try {
+      setProductsLoading(true);
+      const res = await fetch(`${API_BASE}/products`);
+      if (!res.ok) throw new Error("Failed to fetch products");
+      const data: Product[] = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Could not load products:", err);
+    } finally {
+      setProductsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem("codpro_products", JSON.stringify(products));
-  }, [products]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     localStorage.setItem("codpro_cart", JSON.stringify(cart));
@@ -212,29 +98,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const addProduct = (product: Omit<Product, "id">) => {
-    const newProduct: Product = { ...product, id: Date.now().toString() };
+  const addProduct = async (product: Omit<Product, "id">) => {
+    const res = await fetch(`${API_BASE}/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product),
+    });
+    if (!res.ok) throw new Error("Failed to add product");
+    const newProduct: Product = await res.json();
     setProducts((prev) => [...prev, newProduct]);
   };
 
-  const editProduct = (id: string, product: Omit<Product, "id">) => {
-    setProducts((prev) => prev.map((p) => p.id === id ? { ...product, id } : p));
+  const editProduct = async (id: string, product: Omit<Product, "id">) => {
+    const res = await fetch(`${API_BASE}/products/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product),
+    });
+    if (!res.ok) throw new Error("Failed to update product");
+    const updated: Product = await res.json();
+    setProducts((prev) => prev.map((p) => p.id === id ? updated : p));
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
+    const res = await fetch(`${API_BASE}/products/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete product");
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const importProducts = (newProducts: Omit<Product, "id">[]) => {
-    const withIds = newProducts.map((p) => ({ ...p, id: Date.now().toString() + Math.random() }));
-    setProducts((prev) => [...prev, ...withIds]);
+  const importProducts = async (newProducts: Omit<Product, "id">[]) => {
+    const res = await fetch(`${API_BASE}/products/bulk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newProducts),
+    });
+    if (!res.ok) throw new Error("Failed to import products");
+    const imported: Product[] = await res.json();
+    setProducts((prev) => [...prev, ...imported]);
   };
 
   return (
     <StoreContext.Provider value={{
-      products, cart, cartOpen, addToCart, removeFromCart, updateQuantity,
+      products, productsLoading, cart, cartOpen,
+      addToCart, removeFromCart, updateQuantity,
       clearCart, setCartOpen, totalItems, totalPrice,
       addProduct, editProduct, deleteProduct, importProducts,
+      refreshProducts: fetchProducts,
     }}>
       {children}
     </StoreContext.Provider>

@@ -179,7 +179,7 @@ export default function Admin() {
     setForm((f) => ({ ...f, image: url }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.price || !form.image) {
       notify("❌ يرجى ملء جميع الحقول المطلوبة");
       return;
@@ -192,15 +192,19 @@ export default function Admin() {
       category: form.category,
       description: form.description,
     };
-    if (editingId) {
-      editProduct(editingId, product);
-      notify("✅ تم تعديل المنتج");
-      setEditingId(null);
-    } else {
-      addProduct(product);
-      notify("✅ تم إضافة المنتج");
+    try {
+      if (editingId) {
+        await editProduct(editingId, product);
+        notify("✅ تم تعديل المنتج");
+        setEditingId(null);
+      } else {
+        await addProduct(product);
+        notify("✅ تم إضافة المنتج");
+      }
+      setForm(EMPTY_FORM);
+    } catch {
+      notify("❌ حدث خطأ، يرجى المحاولة مجدداً");
     }
-    setForm(EMPTY_FORM);
   };
 
   const startEdit = (p: Product) => {
@@ -218,25 +222,35 @@ export default function Admin() {
 
   const cancelEdit = () => { setEditingId(null); setForm(EMPTY_FORM); };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (deleteConfirm === id) {
-      deleteProduct(id);
+      try {
+        await deleteProduct(id);
+        notify("🗑 تم حذف المنتج");
+      } catch {
+        notify("❌ فشل حذف المنتج");
+      }
       setDeleteConfirm(null);
-      notify("🗑 تم حذف المنتج");
     } else {
       setDeleteConfirm(id);
       setTimeout(() => setDeleteConfirm(null), 3000);
     }
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     try {
       const data = JSON.parse(importJson);
       const arr = Array.isArray(data) ? data : [data];
-      importProducts(arr);
+      await importProducts(arr);
       notify(`✅ تم استيراد ${arr.length} منتج`);
       setImportJson(""); setShowImport(false);
-    } catch { notify("❌ صيغة JSON غير صحيحة"); }
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        notify("❌ صيغة JSON غير صحيحة");
+      } else {
+        notify("❌ فشل الاستيراد، يرجى المحاولة مجدداً");
+      }
+    }
   };
 
   const handleExport = () => {
@@ -275,7 +289,7 @@ export default function Admin() {
             <ArrowRight size={20} style={{ color: "#c9921a" }} />
           </button>
           <div>
-            <span className="text-xl font-black" style={{ color: "#c9921a", letterSpacing: "0.1em" }}>COD PRO</span>
+            <span className="text-xl font-black" style={{ color: "#c9921a", letterSpacing: "0.1em" }}>Outfit Pro</span>
             <span className="text-sm mr-2" style={{ color: "rgba(240,234,214,0.5)" }}>لوحة الإدارة</span>
           </div>
         </div>
